@@ -1,9 +1,8 @@
 %-----------------------------------------------------------------------
 
-% This code solves the basic RBC model presented in McKay's website
-% Using Pontus Rendahl's (2017) Linear Time Iteration (LTI) method
-% Written with Matlab R2018b
-% Author: Panagiotis Veneris, University of Liverpool Management School
+% Basic RBC (McKay's website)
+% Solution Method: Linear Time Iteration (Rendahl 2017)
+% Panagiotis Veneris, University of Liverpool
 % Date: 26/10/2020
 
 %------------------------------------------------------------------------
@@ -15,19 +14,19 @@ clc;
 
 
 %Define Parameters
-alppha = 0.36; % capital share
-gamma =  1;   % Risk aversion
-delta = 0.025; % Depreciation rate
-rho_z = 0.95; % shock persistence
-beta = 0.97; % discount factor
+alppha = 0.36;         % capital share
+gamma =  1;            % Risk aversion
+delta = 0.025;         % Depreciation rate
+rho_z = 0.95;          % shock persistence
+beta = 0.97;           % discount factor
 it = 0;
 
 
-% Define Steady State (only of the variables that appear in SS form in the loglin.system equations) 
+% Define Steady State  
 R = 1/beta;
 
 
-% Define Coefficients (of variables that appear in the loglin. system of equations)
+% Define Coefficients 
 coeff0 = (R-1+delta)/R;
 coeff1 = (1/gamma) * coeff0;
 coeff2 = ((alppha-1)/gamma) * coeff0;
@@ -38,9 +37,6 @@ coeff5 = (R-1+(delta*(1-alppha)))/alppha;
 
 %---------------------------------------------------
 % Matrix form of Linear RE model
-% model:A*E_t{X_t+1}+B*X_{t}+C*X_{t-1}+W*u_{t}=0, (instead of ε in the notes
-% here I use W, and instead of ε_{t} I use u_{t})
-% X = [ c k z]'
 %---------------------------------------------------
 
 
@@ -60,14 +56,7 @@ W = [ 0; 0; -1];    % for negative prod.shock remove (-)
 
 
 %-----------------------------------------------------------------------------------------------
-% Solver for Linear Time Iteration (Rendahl 2017)
-
-% Algorithm Description:
-% Step1: Guess a value P_{0}
-% Step 2:Calculate P_{1} from P_{1} = -[A*P_{0}+B]^(-1) * C
-% Step 3: If P_{1} solves (approxim.) the matrix quadr.eq.: A*P_{1}^2 + B*P_{1}+C within some
-% tolerance then stop--> P_{1} is the solvent
-% Step 4: Otherwise iterate again to get P_{2} and follow the same steps
+% Main Loop
 %-----------------------------------------------------------------------------------------------
 
 Tol = 1e-13;        % tolerance level for time iteration algorithm, default: 1e-13
@@ -75,8 +64,6 @@ Tol = 1e-13;        % tolerance level for time iteration algorithm, default: 1e-
 metric = 1; 
 P = 0;              % initial guess for P
 
-% Run the algorithm until convergence
-% Find  x_t = P x_{t-1}+Q u_t, where X_t is the policy function (ex how C responds to a 1% techn.shock (u_t)).
 
 tic
 while metric>Tol
@@ -99,11 +86,9 @@ toc
 nresp = 80; % horizon of responses (IRFs)
 
  
-x = zeros(3, nresp);             % creates a 3x30 matrix of x's, that is, the policy
-                                 % functions of consumption (1), capital (2) and productivity (3)
-                                 % for 30 periods
+x = zeros(3, nresp);             
                       
-u = zeros(1, nresp);             % creates a 1x30 matrix of u's (errors/disturbances)
+u = zeros(1, nresp);             
 
 
 % Initialize u   
@@ -114,22 +99,22 @@ for t=2:nresp
     x(:,t) = P*x(:,t-1)+ Q*u(:,t-1);                                      
 end                                                                      
 
-% How to generate the IRFs of the variables not present in the reduced system (y,R,k,prod.) 
+% Remaining IRFs
 
-k_irf = x(1,2:end);                       % Gives the IRF for Capital
-z_irf = x(3,2:end);                       % Gives the IRF for Productivity
+k_irf = x(1,2:end);                       
+z_irf = x(3,2:end);                      
                                       
-y_irf = z_irf + alppha*k_irf;             % Generates the IRF of Output (y) (check equil.condition for y in notes)
+y_irf = z_irf + alppha*k_irf;             
 
 
-R_irf = coeff0*(y_irf - k_irf);           % Generates the IRf of Real Interest Rate (R) (check equil.cond. for r in notes)
+R_irf = coeff0*(y_irf - k_irf);           
 
 
 
 % Plotting
 figure(1);
-subplot(3,1,1); plot(x(1,2:end), 'r','Linewidth',2);    % plots the policy funtion of the 1st variable of matrix x (3x80)
-                                                        % (1st variable is consumption) for the specified horizon 
+subplot(3,1,1); plot(x(1,2:end), 'r','Linewidth',2);    
+                                                       
 title('Consumption');
 grid on;
 
